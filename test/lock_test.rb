@@ -1,12 +1,12 @@
 require 'test/unit'
 require 'resque'
-require 'resque/plugins/lock'
+require 'resque/plugins/queue/lock'
 
 $counter = 0
 
 class LockTest < Test::Unit::TestCase
   class Job
-    extend Resque::Plugins::Lock
+    extend Resque::Plugins::Queue::Lock
     @queue = :lock_test
 
     def self.perform
@@ -22,7 +22,7 @@ class LockTest < Test::Unit::TestCase
 
   def test_lint
     assert_nothing_raised do
-      Resque::Plugin.lint(Resque::Plugins::Lock)
+      Resque::Plugin.lint(Resque::Plugins::Queue::Lock)
     end
   end
 
