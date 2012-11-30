@@ -46,12 +46,19 @@ module Resque
           "#{name}-#{args.to_s}"
         end
 
+        # Override in your job to control the queue lock experiation time. This
+        # is the time in seconds that the lock should be considered valid. The
+        # default is one hour (3600 seconds).
+        def queue_lock_timeout(*)
+          3600
+        end
+
         def namespaced_lock(*args)
           "queuelock:#{lock(*args)}"
         end
 
         def before_enqueue_lock(*args)
-          Resque.redis.setnx(namespaced_lock(*args), true)
+          acquire_queue_lock(*args) && set_queue_lock_expiration(*args)
         end
 
         def before_dequeue_lock(*args)
@@ -67,6 +74,15 @@ module Resque
         end
         def self.clear_all_locks
           all_locks.collect { |x| Resque.redis.del(x) }.count
+        end
+
+        private
+        def acquire_queue_lock(*args)
+          Resque.redis.setnx(namespaced_lock(*args), true)
+        end
+
+        def set_queue_lock_expiration(*args)
+          Resque.redis.expire(namespaced_lock(*args), queue_lock_timeout(*args))
         end
       end
     end
