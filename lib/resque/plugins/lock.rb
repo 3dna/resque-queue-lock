@@ -18,7 +18,9 @@ module Resque
     # No other UpdateNetworkGraph jobs will be placed on the queue,
     # the QueueLock class will check Redis to see if any others are
     # queued with the same arguments before queueing. If another
-    # is queued the enqueue will be aborted.
+    # is queued the enqueue will be aborted. The lock will be
+    # released when the worker starts performing, so a worker can
+    # enqueue another job with identical arguments.
     #
     # If you want to define the key yourself you can override the
     # `lock` class method in your subclass, e.g.
@@ -35,26 +37,6 @@ module Resque
     #     heavy_lifting
     #   end
     # end
-    #
-    # The above modification will ensure only one job of class
-    # UpdateNetworkGraph is running at a time, regardless of the
-    # repo_id. Normally a job is locked using a combination of its
-    # class name and arguments.
-    # 
-    # It is also possible to define locks which will get released
-    # BEFORE performing a job by overriding the lock_running? class
-    # method in your subclass. This is useful in cases where you need
-    # to get a job queued even if another job on same queue is already
-    # running, e.g.
-    # 
-    # class UpdateNetworkGraph
-    #   extend Resque::Plugins::Lock
-    #
-    #   # Do not lock a running job
-    #   def self.lock_running?
-    #     false
-    #   end
-    # end
     module Lock
       # Override in your job to control the lock key. It is
       # passed the same arguments as `perform`, that is, your job's
@@ -64,7 +46,7 @@ module Resque
       end
 
       def namespaced_lock(*args)
-        "lock:#{lock(*args)}"
+        "queuelock:#{lock(*args)}"
       end
 
       def before_enqueue_lock(*args)
@@ -75,23 +57,12 @@ module Resque
         Resque.redis.del(namespaced_lock(*args))
       end
 
-      def lock_running?
-        true
-      end
-
-      def around_perform_lock(*args)
-        before_dequeue_lock(*args) unless lock_running?
-        begin
-          yield
-        ensure
-          # Always clear the lock when we're done, even if there is an
-          # error.
-          before_dequeue_lock(*args) if lock_running?
-        end
+      def before_perform_lock(*args)
+        before_dequeue_lock(*args)
       end
 
       def self.all_locks
-        Resque.redis.keys('lock:*')
+        Resque.redis.keys('queuelock:*')
       end
       def self.clear_all_locks
         all_locks.collect { |x| Resque.redis.del(x) }.count

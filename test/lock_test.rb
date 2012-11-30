@@ -16,8 +16,8 @@ class LockTest < Test::Unit::TestCase
 
   def setup
     Resque.redis.del('queue:lock_test')
-    Resque.redis.del("lock:#{Job.lock}")
-    Resque.redis.del("lock:#{Job.lock(1)}")
+    Resque.redis.del("queuelock:#{Job.lock}")
+    Resque.redis.del("queuelock:#{Job.lock(1)}")
   end
 
   def test_lint
@@ -47,15 +47,15 @@ class LockTest < Test::Unit::TestCase
 
   def test_unlock
     Resque.enqueue(Job)
-    assert_equal "true", Resque.redis.get("lock:#{Job.lock}")
+    assert_equal "true", Resque.redis.get("queuelock:#{Job.lock}")
     Resque.dequeue(Job)
-    assert_nil Resque.redis.get("lock:#{Job.lock}")
+    assert_nil Resque.redis.get("queuelock:#{Job.lock}")
   end
   def test_unlock_with_args
     Resque.enqueue(Job, 1)
-    assert_equal "true", Resque.redis.get("lock:#{Job.lock(1)}")
+    assert_equal "true", Resque.redis.get("queuelock:#{Job.lock(1)}")
     Resque.dequeue(Job, 1)
-    assert_nil Resque.redis.get("lock:#{Job.lock(1)}")
+    assert_nil Resque.redis.get("queuelock:#{Job.lock(1)}")
   end
 
 end
