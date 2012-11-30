@@ -9,10 +9,10 @@ with this module.
 
 For example:
 
-    require 'resque/plugins/lock'
+    require 'resque/plugins/queue/lock'
 
     class UpdateNetworkGraph
-      extend Resque::Plugins::Lock
+      extend Resque::Plugins::Queue::Lock
 
       def self.perform(repo_id)
         heavy_lifting
@@ -26,7 +26,7 @@ If you want to define the key yourself you can override the
 `lock` class method in your subclass, e.g.
 
     class UpdateNetworkGraph
-      extend Resque::Plugins::Lock
+      extend Resque::Plugins::Queue::Lock
 
       Run only one at a time, regardless of repo_id.
       def self.lock(repo_id)
@@ -37,26 +37,5 @@ If you want to define the key yourself you can override the
         heavy_lifting
       end
     end
-
-The above modification will ensure only one job of class
-UpdateNetworkGraph is queued at a time, regardless of the
-repo_id. Normally a job is locked using a combination of its
-class name and arguments.
-
-It is also possible to define locks which will get released
-BEFORE performing a job by overriding the lock_running? class
-method in your subclass. This is useful in cases where you need
-to get a job queued even if another job on same queue is already
-running, e.g.
-
-    class UpdateNetworkGraph
-      extend Resque::Plugins::Lock
-
-      # Do not lock a running job
-      def self.lock_running?
-        false
-      end
-    end
-
 
 [rq]: http://github.com/defunkt/resque

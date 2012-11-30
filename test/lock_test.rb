@@ -2,8 +2,6 @@ require 'test/unit'
 require 'resque'
 require 'resque/plugins/queue/lock'
 
-$counter = 0
-
 class LockTest < Test::Unit::TestCase
   class Job
     extend Resque::Plugins::Queue::Lock
