@@ -8,7 +8,6 @@ class LockTest < Test::Unit::TestCase
     def self.queue; :lock_test end
 
     def self.perform
-      raise "Woah woah woah, that wasn't supposed to happen"
     end
   end
 
@@ -42,6 +41,7 @@ class LockTest < Test::Unit::TestCase
     Resque.dequeue(Job)
     assert_nil Resque.redis.get("queuelock:#{Job.lock}")
   end
+
   def test_unlock_with_args
     Resque.enqueue(Job, 1)
     assert_equal "true", Resque.redis.get("queuelock:#{Job.lock(1)}")
@@ -49,4 +49,11 @@ class LockTest < Test::Unit::TestCase
     assert_nil Resque.redis.get("queuelock:#{Job.lock(1)}")
   end
 
+  def test_unlock_on_perform
+    Resque.enqueue(Job)
+    assert_equal "true", Resque.redis.get("queuelock:#{Job.lock}")
+    job = Resque.reserve(Job.queue)
+    job.perform
+    assert_nil Resque.redis.get("queuelock:#{Job.lock}")
+  end
 end
