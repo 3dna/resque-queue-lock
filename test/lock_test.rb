@@ -24,13 +24,6 @@ class LockTest < Test::Unit::TestCase
     end
   end
 
-  def test_version
-    major, minor, patch = Resque::Version.split('.')
-    assert_equal 1, major.to_i
-    assert minor.to_i >= 17
-    assert Resque::Plugin.respond_to?(:before_enqueue_hooks)
-  end
-
   def test_lock
     3.times { Resque.enqueue(Job) }
 
