@@ -24,13 +24,13 @@ module Resque
       # enqueue another job with identical arguments.
       #
       # If you want to define the key yourself you can override the
-      # `lock` class method in your subclass, e.g.
+      # `queue_lock` class method in your subclass, e.g.
       #
       # class UpdateNetworkGraph
       #   extend Resque::Plugins::Queue::Lock
       #
       #   # Run only one at a time, regardless of repo_id.
-      #   def self.lock(repo_id)
+      #   def self.queue_lock(repo_id)
       #     "network-graph"
       #   end
       #
@@ -42,31 +42,32 @@ module Resque
         # Override in your job to control the lock key. It is
         # passed the same arguments as `perform`, that is, your job's
         # payload.
-        def lock(*args)
+        def queue_lock(*args)
           "#{name}-#{args.to_s}"
         end
 
-        def namespaced_lock(*args)
-          "queuelock:#{lock(*args)}"
+        def namespaced_queue_lock(*args)
+          "queuelock:#{queue_lock(*args)}"
         end
 
-        def before_enqueue_lock(*args)
-          Resque.redis.setnx(namespaced_lock(*args), true)
+        def before_enqueue_queue_lock(*args)
+          Resque.redis.setnx(namespaced_queue_lock(*args), true)
         end
 
-        def before_dequeue_lock(*args)
-          Resque.redis.del(namespaced_lock(*args))
+        def before_dequeue_queue_lock(*args)
+          Resque.redis.del(namespaced_queue_lock(*args))
         end
 
-        def before_perform_lock(*args)
-          before_dequeue_lock(*args)
+        def before_perform_queue_lock(*args)
+          before_dequeue_queue_lock(*args)
         end
 
-        def self.all_locks
+        def self.all_queue_locks
           Resque.redis.keys('queuelock:*')
         end
-        def self.clear_all_locks
-          all_locks.collect { |x| Resque.redis.del(x) }.count
+
+        def self.clear_all_queue_locks
+          all_queue_locks.map{ |queue_lock| Resque.redis.del(queue_lock) }
         end
       end
     end

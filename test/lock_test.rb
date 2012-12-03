@@ -13,8 +13,8 @@ class LockTest < Test::Unit::TestCase
 
   def setup
     Resque.redis.del('queue:lock_test')
-    Resque.redis.del("queuelock:#{Job.lock}")
-    Resque.redis.del("queuelock:#{Job.lock(1)}")
+    Resque.redis.del("queuelock:#{Job.queue_lock}")
+    Resque.redis.del("queuelock:#{Job.queue_lock(1)}")
   end
 
   def test_lint
@@ -37,23 +37,23 @@ class LockTest < Test::Unit::TestCase
 
   def test_unlock
     Resque.enqueue(Job)
-    assert_equal "true", Resque.redis.get("queuelock:#{Job.lock}")
+    assert_equal "true", Resque.redis.get("queuelock:#{Job.queue_lock}")
     Resque.dequeue(Job)
-    assert_nil Resque.redis.get("queuelock:#{Job.lock}")
+    assert_nil Resque.redis.get("queuelock:#{Job.queue_lock}")
   end
 
   def test_unlock_with_args
     Resque.enqueue(Job, 1)
-    assert_equal "true", Resque.redis.get("queuelock:#{Job.lock(1)}")
+    assert_equal "true", Resque.redis.get("queuelock:#{Job.queue_lock(1)}")
     Resque.dequeue(Job, 1)
-    assert_nil Resque.redis.get("queuelock:#{Job.lock(1)}")
+    assert_nil Resque.redis.get("queuelock:#{Job.queue_lock(1)}")
   end
 
   def test_unlock_on_perform
     Resque.enqueue(Job)
-    assert_equal "true", Resque.redis.get("queuelock:#{Job.lock}")
+    assert_equal "true", Resque.redis.get("queuelock:#{Job.queue_lock}")
     job = Resque.reserve(Job.queue)
     job.perform
-    assert_nil Resque.redis.get("queuelock:#{Job.lock}")
+    assert_nil Resque.redis.get("queuelock:#{Job.queue_lock}")
   end
 end
