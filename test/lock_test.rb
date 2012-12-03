@@ -5,7 +5,7 @@ require 'resque/plugins/queue/lock'
 class LockTest < Test::Unit::TestCase
   class Job
     extend Resque::Plugins::Queue::Lock
-    @queue = :lock_test
+    def self.queue; :lock_test end
 
     def self.perform
       raise "Woah woah woah, that wasn't supposed to happen"
