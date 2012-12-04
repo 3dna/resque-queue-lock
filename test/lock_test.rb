@@ -7,7 +7,7 @@ class LockTest < Test::Unit::TestCase
     extend Resque::Plugins::Queue::Lock
     def self.queue; :lock_test end
 
-    def self.perform
+    def self.perform(*)
     end
   end
 
@@ -55,5 +55,13 @@ class LockTest < Test::Unit::TestCase
     job = Resque.reserve(Job.queue)
     job.perform
     assert_nil Resque.redis.get("queuelock:#{Job.queue_lock}")
+  end
+
+  def test_lock_with_non_json_objects
+    time = Time.now
+    Resque.enqueue(Job, time)
+    assert_equal "true", Resque.redis.get("queuelock:#{Job.queue_lock(time.to_s)}")
+    Resque.reserve(Job.queue).perform
+    assert_nil Resque.redis.get("queuelock:#{Job.queue_lock(time.to_s)}")
   end
 end

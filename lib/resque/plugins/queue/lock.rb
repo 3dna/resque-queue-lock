@@ -47,7 +47,8 @@ module Resque
         end
 
         def namespaced_queue_lock(*args)
-          "queuelock:#{queue_lock(*args)}"
+          lock_name = queue_lock(*Resque::Job.decode(Resque::Job.encode(args)))
+          "queuelock:#{lock_name}"
         end
 
         def before_enqueue_queue_lock(*args)
