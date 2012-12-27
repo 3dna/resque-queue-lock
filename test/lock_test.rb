@@ -11,6 +11,15 @@ class LockTest < Test::Unit::TestCase
     end
   end
 
+  class BrokenJob
+    extend Resque::Plugins::Queue::Lock
+    def self.queue; :lock_test_broken end
+
+    def self.perform(*)
+      raise "ERROR"
+    end
+  end
+
   def setup
     Resque.redis.del('queue:lock_test')
     Resque.redis.del("queuelock:#{Job.queue_lock}")
@@ -63,5 +72,18 @@ class LockTest < Test::Unit::TestCase
     assert_equal "true", Resque.redis.get("queuelock:#{Job.queue_lock(time.to_s)}")
     Resque.reserve(Job.queue).perform
     assert_nil Resque.redis.get("queuelock:#{Job.queue_lock(time.to_s)}")
+  end
+
+  def test_lock_cleared_on_exception
+    args        = Time.now.to_s
+    lock_id     = BrokenJob.queue_lock(args)
+    lock_string = "queuelock:#{lock_id}"
+    lock        = ->{ Resque.redis.get(lock_string) }
+
+    Resque.enqueue(BrokenJob, args)
+    assert_equal "true", lock.()
+
+    Resque.reserve(BrokenJob.queue).perform  rescue nil
+    assert_nil lock.()
   end
 end
