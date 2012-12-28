@@ -60,15 +60,15 @@ module Resque
 
 
         def _release_lock(*args)
-          Resque.redis.del(_namespaced_queue_lock(*args))
+          Resque.redis.del( _namespaced_queue_lock(*args) )
         end
 
         def _acquire_lock(*args)
-          Resque.redis.setnx(_namespaced_queue_lock(*args), true)
+          Resque.redis.setnx( _namespaced_queue_lock(*args), true )
         end
 
         def _namespaced_queue_lock(*args)
-          lock_name = queue_lock(*Resque::Job.decode(Resque::Job.encode(args)))
+          lock_name = queue_lock( *Resque::Job.decode(Resque::Job.encode(args)) )
           "queuelock:#{lock_name}"
         end
 
@@ -79,7 +79,7 @@ module Resque
         end
 
         def self.clear_all_queue_locks
-          all_queue_locks.map{ |queue_lock| Resque.redis.del(queue_lock) }
+          all_queue_locks.each{ |queue_lock| Resque.redis.del(queue_lock) }
         end
       end
     end
