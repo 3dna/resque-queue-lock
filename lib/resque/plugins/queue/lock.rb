@@ -46,30 +46,30 @@ module Resque
           "#{name}-#{args.to_s}"
         end
 
-        def namespaced_queue_lock(*args)
+        def before_enqueue__queue_lock(*args)
+          _acquire_lock(*args)
+        end
+
+        def before_dequeue__queue_lock(*args)
+          _release_lock(*args)
+        end
+
+        def before_perform__queue_lock(*args)
+          _release_lock(*args)
+        end
+
+
+        def _release_lock(*args)
+          Resque.redis.del(_namespaced_queue_lock(*args))
+        end
+
+        def _acquire_lock(*args)
+          Resque.redis.setnx(_namespaced_queue_lock(*args), true)
+        end
+
+        def _namespaced_queue_lock(*args)
           lock_name = queue_lock(*Resque::Job.decode(Resque::Job.encode(args)))
           "queuelock:#{lock_name}"
-        end
-
-        def before_enqueue_queue_lock(*args)
-          acquire_lock(*args)
-        end
-
-        def before_dequeue_queue_lock(*args)
-          release_lock(*args)
-        end
-
-        def before_perform_queue_lock(*args)
-          release_lock(*args)
-        end
-
-
-        def release_lock(*args)
-          Resque.redis.del(namespaced_queue_lock(*args))
-        end
-
-        def acquire_lock(*args)
-          Resque.redis.setnx(namespaced_queue_lock(*args), true)
         end
 
 
