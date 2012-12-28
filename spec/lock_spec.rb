@@ -84,4 +84,34 @@ describe Resque::Plugins::Queue::Lock do
     Resque.reserve(BrokenJob.queue).perform  rescue nil
     lock.().should be_nil
   end
+
+  it "clears the lock, even when it can't connect to redis at first" do
+    args        = 1
+    lock_id     = Job.queue_lock(args)
+    lock_string = "queuelock:#{lock_id}"
+    lock        = ->{ Resque.redis.get(lock_string) }
+    real_redis  = Resque.redis
+    times       = 0
+
+    Resque.enqueue(Job, args)
+    lock.().should == "true"
+
+    job = Resque.reserve(Job.queue)
+
+    Resque.stub :redis do
+      times += 1
+      if times < 2
+        raise Redis::CannotConnectError
+      else
+        real_redis
+      end
+    end
+
+    job.perform
+
+    Resque.stub redis: real_redis
+
+    lock.().should be_nil
+  end
+
 end

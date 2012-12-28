@@ -60,11 +60,15 @@ module Resque
 
 
         def _release_lock(*args)
-          Resque.redis.del( _namespaced_queue_lock(*args) )
+          _reliably do
+            Resque.redis.del( _namespaced_queue_lock(*args) )
+          end
         end
 
         def _acquire_lock(*args)
-          Resque.redis.setnx( _namespaced_queue_lock(*args), true )
+          _reliably do
+            Resque.redis.setnx( _namespaced_queue_lock(*args), true )
+          end
         end
 
         def _namespaced_queue_lock(*args)
@@ -72,7 +76,18 @@ module Resque
           "queuelock:#{lock_name}"
         end
 
-
+        def _reliably
+          tries = 0
+          begin
+            tries += 1
+            yield
+          rescue Redis::CannotConnectError
+            if tries < 3
+              sleep tries
+              retry
+            end
+          end
+        end
 
         def self.all_queue_locks
           Resque.redis.keys('queuelock:*')
