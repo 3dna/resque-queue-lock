@@ -44,21 +44,21 @@ describe Resque::Plugins::Queue::Lock do
 
   it "unlocks the queue when finished" do
     Resque.enqueue(Job)
-    Resque.redis.get("queuelock:#{Job.queue_lock}").should == "true"
+    Resque.redis.get("queuelock:#{Job.queue_lock}").should be_true
     Resque.dequeue(Job)
     Resque.redis.get("queuelock:#{Job.queue_lock}").should be_nil
   end
 
   it "unlocks the queue when finished, given arguments" do
     Resque.enqueue(Job, 1)
-    Resque.redis.get("queuelock:#{Job.queue_lock(1)}").should == "true"
+    Resque.redis.get("queuelock:#{Job.queue_lock(1)}").should be_true
     Resque.dequeue(Job, 1)
     Resque.redis.get("queuelock:#{Job.queue_lock(1)}").should be_nil
   end
 
   it "unlocks the queue when it starts performing" do
     Resque.enqueue(Job)
-    Resque.redis.get("queuelock:#{Job.queue_lock}").should == "true"
+    Resque.redis.get("queuelock:#{Job.queue_lock}").should be_true
     job = Resque.reserve(Job.queue)
     job.perform
     Resque.redis.get("queuelock:#{Job.queue_lock}").should be_nil
@@ -67,7 +67,7 @@ describe Resque::Plugins::Queue::Lock do
   it "locks with non-JSON objects" do
     time = Time.now
     Resque.enqueue(Job, time)
-    Resque.redis.get("queuelock:#{Job.queue_lock(time.to_s)}").should == "true"
+    Resque.redis.get("queuelock:#{Job.queue_lock(time.to_s)}").should be_true
     Resque.reserve(Job.queue).perform
     Resque.redis.get("queuelock:#{Job.queue_lock(time.to_s)}").should be_nil
   end
@@ -79,7 +79,7 @@ describe Resque::Plugins::Queue::Lock do
     lock        = ->{ Resque.redis.get(lock_string) }
 
     Resque.enqueue(BrokenJob, args)
-    lock.().should == "true"
+    lock.().should be_true
 
     Resque.reserve(BrokenJob.queue).perform  rescue nil
     lock.().should be_nil
@@ -94,7 +94,7 @@ describe Resque::Plugins::Queue::Lock do
     times       = 0
 
     Resque.enqueue(Job, args)
-    lock.().should == "true"
+    lock.().should be_true
 
     job = Resque.reserve(Job.queue)
 

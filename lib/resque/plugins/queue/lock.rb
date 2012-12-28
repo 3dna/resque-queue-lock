@@ -67,7 +67,7 @@ module Resque
 
         def _acquire_lock(*args)
           _reliably do
-            Resque.redis.setnx( _namespaced_queue_lock(*args), true )
+            Resque.redis.setnx( _namespaced_queue_lock(*args), Time.now )
           end
         end
 
