@@ -52,16 +52,27 @@ module Resque
         end
 
         def before_enqueue_queue_lock(*args)
-          Resque.redis.setnx(namespaced_queue_lock(*args), true)
+          acquire_lock(*args)
         end
 
         def before_dequeue_queue_lock(*args)
-          Resque.redis.del(namespaced_queue_lock(*args))
+          release_lock(*args)
         end
 
         def before_perform_queue_lock(*args)
-          before_dequeue_queue_lock(*args)
+          release_lock(*args)
         end
+
+
+        def release_lock(*args)
+          Resque.redis.del(namespaced_queue_lock(*args))
+        end
+
+        def acquire_lock(*args)
+          Resque.redis.setnx(namespaced_queue_lock(*args), true)
+        end
+
+
 
         def self.all_queue_locks
           Resque.redis.keys('queuelock:*')
