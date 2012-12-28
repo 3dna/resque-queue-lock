@@ -12,6 +12,9 @@ Gem::Specification.new do |s|
   s.files            += Dir.glob("lib/**/*")
   s.files            += Dir.glob("test/**/*")
 
+  s.add_dependency "resque"
+  s.add_development_dependency "rake"
+
   s.description       = <<desc
 A Resque plugin. If you want only one instance of your job
 queued at a time, extend it with this module.
