@@ -14,6 +14,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency "resque"
   s.add_development_dependency "rake"
+  s.add_development_dependency "rspec", "~> 2.12.0"
 
   s.description       = <<desc
 A Resque plugin. If you want only one instance of your job
