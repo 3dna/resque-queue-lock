@@ -82,7 +82,7 @@ module Resque
             tries += 1
             yield
           rescue Redis::CannotConnectError
-            if tries < 3
+            if tries < 30
               sleep tries
               retry
             end
