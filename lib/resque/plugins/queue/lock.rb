@@ -1,43 +1,6 @@
 module Resque
   module Plugins
     module Queue
-      # If you want only one instance of your job queued at a time,
-      # extend it with this module.
-      #
-      # For example:
-      #
-      # require 'resque/plugins/queue/lock'
-      #
-      # class UpdateNetworkGraph
-      #   extend Resque::Plugins::Queue::Lock
-      #
-      #   def self.perform(repo_id)
-      #     heavy_lifting
-      #   end
-      # end
-      #
-      # No other UpdateNetworkGraph jobs will be placed on the queue,
-      # the QueueLock class will check Redis to see if any others are
-      # queued with the same arguments before queueing. If another
-      # is queued the enqueue will be aborted. The lock will be
-      # released when the worker starts performing, so a worker can
-      # enqueue another job with identical arguments.
-      #
-      # If you want to define the key yourself you can override the
-      # `queue_lock` class method in your subclass, e.g.
-      #
-      # class UpdateNetworkGraph
-      #   extend Resque::Plugins::Queue::Lock
-      #
-      #   # Run only one at a time, regardless of repo_id.
-      #   def self.queue_lock(repo_id)
-      #     "network-graph"
-      #   end
-      #
-      #   def self.perform(repo_id)
-      #     heavy_lifting
-      #   end
-      # end
       module Lock
         # Override in your job to control the lock key. It is
         # passed the same arguments as `perform`, that is, your job's
