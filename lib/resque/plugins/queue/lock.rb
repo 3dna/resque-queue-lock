@@ -9,6 +9,13 @@ module Resque
           "#{name}-#{args.to_s}"
         end
 
+        # Override in your job to control the worker lock experiation time. This
+        # is the time in seconds that the lock should be considered valid. The
+        # default is one hour (3600 seconds).
+        def queue_lock_timeout
+          3600
+        end
+
         def before_enqueue__queue_lock(*args)
           _acquire_lock(*args)
         end
@@ -21,35 +28,21 @@ module Resque
           _release_lock(*args)
         end
 
-
         def _release_lock(*args)
-          _reliably do
-            Resque.redis.del( _namespaced_queue_lock(*args) )
-          end
+          Resque.redis.del( _namespaced_queue_lock(*args) )
         end
 
         def _acquire_lock(*args)
-          _reliably do
-            Resque.redis.setnx( _namespaced_queue_lock(*args), Time.now )
+          if Resque.redis.setnx( _namespaced_queue_lock(*args), true )
+            Resque.redis.expire( _namespaced_queue_lock(*args), queue_lock_timeout )
+          else
+            false
           end
         end
 
         def _namespaced_queue_lock(*args)
           lock_name = queue_lock( *Resque::Job.decode(Resque::Job.encode(args)) )
           "queuelock:#{lock_name}"
-        end
-
-        def _reliably
-          tries = 0
-          begin
-            tries += 1
-            yield
-          rescue Redis::CannotConnectError
-            if tries < 30
-              sleep tries
-              retry
-            end
-          end
         end
 
         def self.all_queue_locks
@@ -63,3 +56,4 @@ module Resque
     end
   end
 end
+
